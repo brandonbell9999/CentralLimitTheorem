@@ -50,7 +50,7 @@ Key techniques: (1) `congr_arg Complex.ofReal` pattern for ℝ→ℂ transfer (a
 ---
 
 ### Taylor — 2026-02-16
-- **Spec**: `charfun-taylor.md`
+- **Spec**: `specs/charfun-taylor.md`
 - **Lean files**: `CLT/CharFun/Taylor.lean`
 - **lake build**: PASS (style warnings only)
 - **sorry count**: 0

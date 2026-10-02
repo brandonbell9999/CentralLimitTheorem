@@ -1,5 +1,7 @@
 # Claude Mathematics Kit — Workflow Instructions
 
+> This file documents the agent session that produced the proof in this repository; the runtime artifacts it refers to (`results/`, `/tmp/math-CLT/` logs) are not committed.
+
 ## You Are the PI (Principal Investigator)
 
 You are the **orchestrator** — a PI managing a research lab. You **NEVER** do proof work, tactic debugging, or Lean editing yourself. Instead, you:
@@ -26,7 +28,7 @@ You are the **orchestrator** — a PI managing a research lab. You **NEVER** do 
 
 When running inside a Claude Code session, sub-agents require unsetting the nesting guard:
 ```bash
-unset CLAUDECODE && ./math.sh prove charfun-taylor.md
+unset CLAUDECODE && ./math.sh prove specs/charfun-taylor.md
 ```
 Always use `unset CLAUDECODE &&` as a prefix. Run in background for long phases.
 

@@ -28,7 +28,7 @@ Program mode reads this file to auto-advance through mathematical constructions.
 | Construction | Spec File | Date Completed | Theorems |
 |-------------|-----------|----------------|----------|
 | ExpBound | (part of charfun-taylor) | 2026-02-14 | `norm_cexp_mul_I_sub_one_sub_le`, `norm_cexp_mul_I_sub_one_sub_le_sq`, `norm_cexp_mul_I_taylor2_le`, `norm_cexp_mul_I_taylor2_le_cube` |
-| Taylor | `charfun-taylor.md` | 2026-02-16 | `charFun_taylor_remainder_isLittleO`, `charFun_taylor_centered`, `charFun_taylor_centered_unit_variance` |
+| Taylor | `specs/charfun-taylor.md` | 2026-02-16 | `charFun_taylor_remainder_isLittleO`, `charFun_taylor_centered`, `charFun_taylor_centered_unit_variance` |
 | LevyContinuity | `specs/levy-continuity.md` | 2026-02-17 | `levy_continuity`, `tendsto_charFun_of_tendsto_probabilityMeasure` |
 | CentralLimitTheorem | `specs/central-limit-theorem.md` | 2026-02-17 | `charFun_iid_sum_eq_pow`, `central_limit_theorem_charFun`, `central_limit_theorem` |
 

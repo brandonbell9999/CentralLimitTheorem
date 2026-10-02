@@ -1,8 +1,14 @@
+# CentralLimitTheorem — the CLT in Lean 4 / Mathlib
+
+![CI](https://github.com/brandonbell9999/CentralLimitTheorem/actions/workflows/lean_action_ci.yml/badge.svg)
+
+A complete, `sorry`-free formalization of the Lindeberg-Levy Central Limit Theorem in Lean 4 / Mathlib, produced by an LLM agent running under the [claude-mathematics-kit](https://github.com/brandonbell9999/mathematics-kit) orchestration framework (described [below](#about-the-framework-claude-mathematics-kit)).
+
 ## Proof of concept: Central Limit Theorem
 
 The first end-to-end output of the pipeline is a complete formalization of the **Lindeberg-Levy Central Limit Theorem** in Lean 4.27.0 / Mathlib v4.27.0.
 
-No `sorry`, `admit`, or `native_decide`. ~830 lines across 4 files. The human provided the proof architecture (characteristic function route, lemma decomposition, which Mathlib API to target). The agent handled all tactic-level proof search, `lake build` iteration, error resolution, and Mathlib API navigation. No human intervention occurred between `./math.sh full` invocations.
+No `sorry`, `admit`, or `native_decide`. ~830 lines across 4 files. The human provided the proof architecture (characteristic function route, lemma decomposition, which Mathlib API to target). The agent handled all tactic-level proof search, `lake build` iteration, error resolution, and Mathlib API navigation. No human intervention occurred between `./math.sh full` invocations. Human involvement consisted of running the pipeline and orchestrating phases as described in [`CLAUDE.md`](CLAUDE.md): choosing which phase to run on which spec, reviewing phase logs, and updating `CONSTRUCTION_LOG.md` / `DOMAIN_CONTEXT.md` between runs.
 
 Degenne's independent CLT formalization for Mathlib covers the same theorem via a different proof route. The two efforts converging on the same result from different directions — one human-driven for Mathlib contribution, one agent-driven as a capability demonstration — is useful signal that the agent's output is mathematically sound rather than an artifact of overfitting to a single proof strategy.
 
@@ -43,11 +49,33 @@ The full record of what was proved, what failed, what was retried, and what dead
 ## Building the POC
 
 ```bash
-lake update    # first time only
-lake build
+lake exe cache get   # downloads prebuilt Mathlib oleans (~7 min, several GB)
+lake build           # ~15 s afterwards
 ```
 
-Requires Lean 4.27.0 (see `lean-toolchain`). Mathlib v4.27.0 is pinned in `lakefile.toml`.
+Requires Lean 4.27.0 (see `lean-toolchain`). Mathlib v4.27.0 is pinned in `lakefile.toml` and locked in the committed `lake-manifest.json`. Do **not** run `lake update`: it is unnecessary (the manifest already pins the exact Mathlib revision) and would re-pin the dependency to a newer revision, invalidating the cache and possibly the proofs.
+
+### Verifying the proof
+
+The repository contains no `sorry`: `grep -rn sorry CLT CLT.lean` returns nothing. The main theorems depend only on Lean's three standard axioms. To check this yourself, after `lake build`:
+
+```bash
+printf 'import CLT\n#print axioms central_limit_theorem\n' > check.lean && lake env lean check.lean
+```
+
+Expected output:
+
+```
+'central_limit_theorem' depends on axioms: [propext, Classical.choice, Quot.sound]
+```
+
+The same check on the other headline theorems gives the same result:
+
+```
+'central_limit_theorem_charFun' depends on axioms: [propext, Classical.choice, Quot.sound]
+'levy_continuity' depends on axioms: [propext, Classical.choice, Quot.sound]
+'charFun_taylor_remainder_isLittleO' depends on axioms: [propext, Classical.choice, Quot.sound]
+```
 
 ## Theorem inventory
 
@@ -66,13 +94,13 @@ Requires Lean 4.27.0 (see `lean-toolchain`). Mathlib v4.27.0 is pinned in `lakef
 | `central_limit_theorem_charFun` | `CentralLimitTheorem.lean` |
 | `central_limit_theorem` | `CentralLimitTheorem.lean` |
 
-# claude-mathematics-kit
+## About the framework (claude-mathematics-kit)
 
-An orchestration framework for autonomous formal mathematics. An LLM agent operates under phased constraints — file locks, tool-use hooks, error summarization — to produce Lean 4 / Mathlib proofs from natural-language specifications without human intervention beyond the initial `./math.sh full <spec>` invocation.
+The proof was produced with [claude-mathematics-kit](https://github.com/brandonbell9999/mathematics-kit), an orchestration framework for autonomous formal mathematics. An LLM agent operates under phased constraints — file locks, tool-use hooks, error summarization — to produce Lean 4 / Mathlib proofs from natural-language specifications without human intervention beyond the initial `./math.sh full <spec>` invocation.
 
 ~3,000 lines of orchestration infrastructure (`math.sh`, `scripts/`, `.claude/prompts/`, `.claude/hooks/`). The agent under orchestration is Claude (Anthropic).
 
-## Architecture
+### Architecture
 
 The pipeline decomposes formalization into 8 phases, each executed by a fresh sub-agent with phase-specific tool permissions:
 
@@ -82,7 +110,7 @@ SURVEY → SPECIFY → CONSTRUCT → FORMALIZE → PROVE → POLISH → AUDIT �
 
 Each phase gets its own prompt (`.claude/prompts/math-<phase>.md`), its own file-permission state, and its own hook enforcement rules. The orchestrator (`math.sh`) sequences phases, manages revision loops, and handles inter-phase context transfer via disk — the sub-agents never share an LLM context window.
 
-### Design decisions
+#### Design decisions
 
 **Phase-locked file permissions.** During PROVE, spec files are `chmod 444`. During AUDIT, all `.lean` files are locked. Without this, the agent "fixes" build errors by relaxing theorem statements instead of fixing proofs. The permission system makes the wrong thing impossible rather than merely discouraged.
 
@@ -98,7 +126,7 @@ Each phase gets its own prompt (`.claude/prompts/math-<phase>.md`), its own file
 
 **Revision loop with bounded retries.** If AUDIT finds sorrys or axioms, it writes `REVISION.md` specifying which phase to restart from. The `full` pipeline re-enters at that phase, up to 3 revisions. The revision file is archived after each attempt. Without bounded retries, the agent loops indefinitely on an impossible goal.
 
-### Enforcement
+#### Enforcement
 
 The hook system (`pre-tool-use.sh`) performs the following concrete checks:
 
